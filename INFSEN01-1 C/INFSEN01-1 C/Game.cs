@@ -9,7 +9,6 @@ namespace INFSEN01_1
         public GameWrapper(string file)
         {
             string map = System.IO.File.ReadAllText(file);
-            map.Split('\n');
             state = new Func::Game.State(map.Split('\n'), new Func::Game.Object(0, 0));
         }
 
