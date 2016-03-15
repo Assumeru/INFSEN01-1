@@ -1,7 +1,5 @@
 ﻿module Game
 
-let squash (a, (b, c)) = (a, b, c)
-
 type Object = {
     x: int;
     y: int;
@@ -10,6 +8,7 @@ type Object = {
 type State = {
     map: string[];
     player: Object;
+    running: bool;
 }
 
 let moveXY (dir, x, y, state) =
@@ -25,13 +24,13 @@ let moveXY (dir, x, y, state) =
 
 let move (dir, state) =
     match dir with
-    | "north" -> squash(true, moveXY(dir, 0, -1, state))
-    | "east" -> squash(true, moveXY(dir, 1, 0, state))
-    | "south" -> squash(true, moveXY(dir, 0, 1, state))
-    | "west" -> squash(true, moveXY(dir, -1, 0, state))
+    | "north" -> moveXY(dir, 0, -1, state)
+    | "east" -> moveXY(dir, 1, 0, state)
+    | "south" -> moveXY(dir, 0, 1, state)
+    | "west" -> moveXY(dir, -1, 0, state)
 
 let parseCommand (x, state : State) =
     match x with
-    | "stop" -> (false, "Bye", state)
+    | "stop" -> ("Bye", {state with running = false})
     | "north" | "east" | "south" | "west" -> move(x, state)
-    | _ -> (true, "Unknown command", state)
+    | _ -> ("Unknown command", state)

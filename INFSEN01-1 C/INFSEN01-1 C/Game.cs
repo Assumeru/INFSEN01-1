@@ -9,7 +9,7 @@ namespace INFSEN01_1
         public GameWrapper(string file)
         {
             string map = System.IO.File.ReadAllText(file);
-            state = new Func::Game.State(map.Split('\n'), new Func::Game.Object(0, 0));
+            state = new Func::Game.State(map.Split('\n'), new Func::Game.Object(0, 0), true);
         }
 
         public void Run()
@@ -18,9 +18,9 @@ namespace INFSEN01_1
             {
                 string line = System.Console.ReadLine();
                 var output = Func::Game.parseCommand(line, state);
-                System.Console.WriteLine(output.Item2);
-                state = output.Item3;
-                if (!output.Item1)
+                System.Console.WriteLine(output.Item1);
+                state = output.Item2;
+                if (!state.running)
                 {
                     break;
                 }
