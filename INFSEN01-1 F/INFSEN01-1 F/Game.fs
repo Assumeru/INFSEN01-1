@@ -9,6 +9,7 @@ type State = {
     map: string[];
     player: Object;
     running: bool;
+    paused: bool;
 }
 
 let moveXY (dir, x, y, state) =
@@ -34,3 +35,7 @@ let parseCommand (x, state : State) =
     | "stop" -> ("Bye", {state with running = false})
     | "north" | "east" | "south" | "west" -> move(x, state)
     | _ -> ("Unknown command", state)
+
+let runFrame (state: State) =
+    printfn "(%d, %d)" state.player.x state.player.y
+    state
