@@ -32,6 +32,7 @@ let move (dir, state) =
     | "west" -> moveXY(dir, -1, 0, state)
 
 
+
 let checkSurrounding (dir, x, y, state) =
     let x = state.player.x 
     let y = state.player.y
@@ -46,17 +47,14 @@ let canMoveTo(dir, state) =
     | "east" -> checkSurrounding(dir, 1, 0, state)
     | "south" -> checkSurrounding(dir, 0, 1, state)
     | "west" -> checkSurrounding(dir, -1, 0, state)
+    | _ -> ("Unknown command", state)
 
 
 let lookAround (state) = 
-    let output = ""
-    // Then go to each direction and give corresponding message
     let positionsList = ["north";"east";"south";"west"]
     for i in positionsList do
-        canMoveTo(i, state)
-        output = "You can move to" + i
-   
-    output, state
+       canMoveTo(i, state)
+
 
 
 let parseCommand (x, state : State) =
