@@ -19,7 +19,7 @@ namespace INFSEN01_1
 
         public void Run()
         {
-            startBackgroundThread();
+            //startBackgroundThread();
             while(true)
             {
                 string line = Console.ReadLine();
