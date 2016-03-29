@@ -41,30 +41,28 @@ type State = {
 
 let random = System.Random()
 
+let getDirection(dir, state) =
+    match dir with
+    | "left" -> enum<Direction>((int state.player.obj.r + 3) % 4)
+    | "right" -> enum<Direction>((int state.player.obj.r + 1) % 4)
+    | "behind" -> enum<Direction>((int state.player.obj.r + 2) % 4)
+    | _ -> state.player.obj.r
+
 let createState(map, player, prefixes, names): State =
     {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
 
 let createPlayer(x, y, d : Direction) : Player =
     {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10}
 
-let suicide(state) =
-   "You have died, Game Over..." , {state with running = false}
-
 let generateRandomMonsterName(state) = 
-    state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + state.monsterNames.[random.Next(state.monsterNames.Length)]
+    state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
 
-let createMonster(xp, x, y, d : Direction) : Monster =
-    let hp  = int (random.Next() * 10 + xp / 10 + 1)
-    let xp = int (random.Next() * 10 + xp / 10 + 1)
-    let gp =  int (random.Next() * 10 + xp / 10 + 1)      
-    let damage = int (random.Next() * 10 + xp / 10 + 1)   
-
-    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = "Nameless Monster" }
-
-
-let monsterEncounter(state, x, y) =
-    let monster = createMonster(state.player.xp, x, y, state.player.obj.r)
-    "A " + monster.name + " appeared", {state with monsters = monster :: state.monsters}
+let createMonster(xp, x, y, d, state) : Monster =
+    let hp = random.Next(10) + xp / 10 + 1
+    let xp = random.Next(10) + xp + 1
+    let gp =  random.Next(xp + 10)
+    let damage = random.Next(2) + xp / 100 + 1
+    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
 
 let toString(dir) =
     match dir with
@@ -79,6 +77,10 @@ let actualMove(dir, state, newX, newY) =
 let tileExists(x, y, state) = 
     y >= 0 && y < state.map.Length && x >= 0 && x < state.map.[y].Length
 
+let monsterEncounter(state, x, y) =
+    let monster = createMonster(state.player.xp, x, y, getDirection("behind", state), state)
+    monster.name + " appeared", {state with monsters = monster :: state.monsters}
+
 let moveXY (dir, x, y, state) =
     let newX = state.player.obj.x + x
     let newY = state.player.obj.y + y
@@ -86,15 +88,14 @@ let moveXY (dir, x, y, state) =
         let tile = state.map.[newY].[newX]
         match tile with
         | 'o' -> actualMove(dir, state, newX, newY)
-        | 'g' -> (
-                    if(random.NextDouble() < 0.5) then
+        | 'g' -> (if(random.NextDouble() < 0.5) then
                         monsterEncounter(state, newX, newY)
                     else
                         actualMove(dir, state, newX, newY)
                     )
-        | _ -> ("Your path is blocked", state)
+        | _ -> "Your path is blocked", state
     else
-        ("You cannot go that way", state)
+        "You cannot go that way", state
 
 let applyDir(dir, state, func) =
     match dir with
@@ -110,7 +111,7 @@ let checkSurrounding (dir, x, y, state) =
     let x = state.player.obj.x 
     let y = state.player.obj.y
     if x < 0 || y >= state.map.Length || x < 0 || x >= state.map.[y].Length then
-        ("You cannot go to " + dir, state)
+        "You cannot go to " + dir, state
     else
         "You can move to " + dir, state
 
@@ -141,13 +142,6 @@ let lookAround (state) =
     let positionsList = [Direction.north;Direction.east;Direction.south;Direction.west]
     lookList(positionsList, state)
 
-let getDirection(dir, state) =
-    match dir with
-    | "left" -> enum<Direction>((int state.player.obj.r + 3) % 4)
-    | "right" -> enum<Direction>((int state.player.obj.r + 1) % 4)
-    | "behind" -> enum<Direction>((int state.player.obj.r + 2) % 4)
-    | _ -> state.player.obj.r
-
 let parseCommand (x, state : State) =
     match x with
     | "stop" -> ("Bye", {state with running = false})
@@ -165,7 +159,7 @@ let parseCommand (x, state : State) =
     | "turn around" -> "You turned around", {state with player = {state.player with obj = {state.player.obj with r = getDirection("behind", state)}}}
     | "walk" -> move(getDirection("ahead", state), state)
     | "fly" -> "People cannot fly", state
-    | "commit suicide" -> suicide(state)
+    | "commit suicide" -> "You have died..." , {state with running = false}
     | _ -> ("Unknown command", state)
 
 let runFrame (state: State) =
