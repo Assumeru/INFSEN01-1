@@ -20,15 +20,51 @@ type Player = {
     mp: int
 }
 
+type Monster = {
+    obj: Object
+    hp: int
+    xp: int
+    gp: int
+    damage: int
+    name: string
+}
+
 type State = {
     map: string[]
     player: Player
     running: bool
     paused: bool
+    monsters: List<Monster> 
+    monsterPrefixes: string[]
+    monsterNames: string[]
 }
+
+let random = System.Random()
+
+let createState(map, player, prefixes, names): State =
+    {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
 
 let createPlayer(x, y, d : Direction) : Player =
     {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10}
+
+let suicide(state) =
+   "You have died, Game Over..." , {state with running = false}
+
+let generateRandomMonsterName(state) = 
+    state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + state.monsterNames.[random.Next(state.monsterNames.Length)]
+
+let createMonster(xp, x, y, d : Direction) : Monster =
+    let hp  = int (random.Next() * 10 + xp / 10 + 1)
+    let xp = int (random.Next() * 10 + xp / 10 + 1)
+    let gp =  int (random.Next() * 10 + xp / 10 + 1)      
+    let damage = int (random.Next() * 10 + xp / 10 + 1)   
+
+    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = "Nameless Monster" }
+
+
+let monsterEncounter(state, x, y) =
+    let monster = createMonster(state.player.xp, x, y, state.player.obj.r)
+    "A " + monster.name + " appeared", {state with monsters = monster :: state.monsters}
 
 let toString(dir) =
     match dir with
@@ -36,6 +72,9 @@ let toString(dir) =
     | Direction.east -> "east"
     | Direction.south -> "south"
     | Direction.west -> "west"
+
+let actualMove(dir, state, newX, newY) = 
+    ("You moved " + toString(dir), {state with player = {state.player with obj = {x = newX; y = newY; r = dir}}})
 
 let tileExists(x, y, state) = 
     y >= 0 && y < state.map.Length && x >= 0 && x < state.map.[y].Length
@@ -46,7 +85,13 @@ let moveXY (dir, x, y, state) =
     if tileExists(newX, newY, state) then
         let tile = state.map.[newY].[newX]
         match tile with
-        | 'o' -> ("You moved " + toString(dir), {state with player = {state.player with obj = {x = newX; y = newY; r = dir}}})
+        | 'o' -> actualMove(dir, state, newX, newY)
+        | 'g' -> (
+                    if(random.NextDouble() < 0.5) then
+                        monsterEncounter(state, newX, newY)
+                    else
+                        actualMove(dir, state, newX, newY)
+                    )
         | _ -> ("Your path is blocked", state)
     else
         ("You cannot go that way", state)
@@ -73,6 +118,7 @@ let gazeAt(tile) =
     match tile with
     | 'o' -> "An empty corridor"
     | 'c' -> "A wall"
+    | 'g' -> "An ominous passage"
     | _ -> "Something unknown"
 
 let lookXY (dir, x, y, state) =
@@ -119,6 +165,7 @@ let parseCommand (x, state : State) =
     | "turn around" -> "You turned around", {state with player = {state.player with obj = {state.player.obj with r = getDirection("behind", state)}}}
     | "walk" -> move(getDirection("ahead", state), state)
     | "fly" -> "People cannot fly", state
+    | "commit suicide" -> suicide(state)
     | _ -> ("Unknown command", state)
 
 let runFrame (state: State) =

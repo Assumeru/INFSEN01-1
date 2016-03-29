@@ -4,7 +4,7 @@
     {
         static void Main(string[] args)
         {
-            new GameWrapper(args[0]).Run();
+            new GameWrapper(args[0], args[1], args[2]).Run();
         }
     }
 }
