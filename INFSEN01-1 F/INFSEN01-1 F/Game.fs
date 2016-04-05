@@ -37,6 +37,7 @@ type State = {
     monsters: List<Monster> 
     monsterPrefixes: string[]
     monsterNames: string[]
+    commands: string[]
 }
 
 let random = System.Random()
@@ -49,20 +50,21 @@ let getDirection(dir, state) =
     | _ -> state.player.obj.r
 
 let createState(map, player, prefixes, names): State =
-    {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
+    {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names; commands = [|""|]}
 
 let createPlayer(x, y, d : Direction) : Player =
     {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10}
 
 let generateRandomMonsterName(state) = 
-    state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
+    state.monsterPrefixes.[1] + " " + state.monsterNames.[1]
 
 let createMonster(xp, x, y, d, state) : Monster =
     let hp = random.Next(10) + xp / 10 + 1
     let xp = random.Next(10) + xp + 1
     let gp =  random.Next(xp + 10)
     let damage = random.Next(2) + xp / 100 + 1
-    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
+    let name = generateRandomMonsterName(state);
+    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = name;}
 
 let toString(dir) =
     match dir with
@@ -141,8 +143,10 @@ let rec lookList(dirs, state) : string =
 let lookAround (state) = 
     let positionsList = [Direction.north;Direction.east;Direction.south;Direction.west]
     lookList(positionsList, state)
-
+let helpCommandsNormalState(state) = 
+    [|"the following commands are available:";"=========";"stop";"north";"east";"south";"west";"look around";"look left";"look right";"look behind";"look ahead";"turn left";"turn right";"turn around";"walk";"fly";"commit suicide";"help";"=========";|]
 let parseCommand (x, state : State) =
+    let commands = helpCommandsNormalState(state)
     match x with
     | "stop" -> ("Bye", {state with running = false})
     | "north" -> move(Direction.north, state)
@@ -160,6 +164,7 @@ let parseCommand (x, state : State) =
     | "walk" -> move(getDirection("ahead", state), state)
     | "fly" -> "People cannot fly", state
     | "commit suicide" -> "You have died..." , {state with running = false}
+    | "help" -> (commands|> String.concat "\n",state)
     | _ -> ("Unknown command", state)
 
 let runFrame (state: State) =
