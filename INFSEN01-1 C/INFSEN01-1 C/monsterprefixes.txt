@@ -18,6 +18,7 @@ Dasterdly
 Dire
 Drained
 Drunk
+Easter
 Electric
 Elemental
 Epic
