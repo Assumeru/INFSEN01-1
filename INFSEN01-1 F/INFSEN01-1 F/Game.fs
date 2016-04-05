@@ -264,17 +264,21 @@ let loot(state) =
 let lootMonster(state,monster) =
     let randomLoot = [|"health potion"; "bread"; "emerald"; "mana potion"; "bread"; "bread"; "bread"; "mana potion"; "health potion"|]
     let goldAmount = monster.gp
-    let item = ""
-    if(random.NextDouble() < 0.1) then
+    if(random.NextDouble() < 0.9) then
         let item = randomLoot.[random.Next(randomLoot.Length)]
-        ()
-    (goldAmount,item)
+        printf "You looted %d gp and %s \n" goldAmount item ;
+        {state with player = {state.player with Player.gp= state.player.gp + goldAmount; Player.inv = state.player.inv.Add(item, state.player.inv.[item] + 1)}}
+        
+    else
+        printf "You looted %d gp \n" goldAmount;
+        {state with player = {state.player with Player.gp= state.player.gp + goldAmount}}
 
 let damageMonster(state, monster, damage) =
     let newMonster = {monster with Monster.hp = monster.hp - damage}
     if(newMonster.hp <= 0) then
-        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters; player = addXP(state.player, monster.xp)}
-       else
+        let newState = lootMonster(state,newMonster)
+        "You killed " + monster.name ,{newState with monsters = removeFromList monster newState.monsters; player = addXP(newState.player, monster.xp)}
+    else
         let monsters = removeFromList monster state.monsters
         "You hit " + monster.name + " for " + damage.ToString(), {state with monsters = newMonster :: monsters}
 
