@@ -20,6 +20,7 @@ type Player = {
     mp: int
     damage: int
     inv: Map<string, int>
+    lvl: int
 }
 
 type Monster = {
@@ -40,6 +41,16 @@ type State = {
     monsterPrefixes: string[]
     monsterNames: string[]
 }
+
+let addXP(player, xp) =
+    let player = {player with Player.xp = player.xp + xp}
+    let threshold = player.lvl * player.lvl * 10 + 10;
+    if(player.xp >= threshold) then
+        let player = {player with xp = player.xp - threshold; lvl = player.lvl + 1; damage = player.damage + 1; hp = player.hp}
+        printfn "You advanced to level %d" player.lvl
+        player
+    else
+        player
 
 let showInventory(state) =
     printfn "You look in your inventory and find the following items: "
@@ -100,18 +111,18 @@ let createState(map, player, prefixes, names): State =
     {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
 
 let createPlayer(x, y, d : Direction) : Player =
-    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; damage = 10; inv = ["health potion", 2; "bread", 1;
+    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; damage = 10; lvl = 0; inv = ["health potion", 2; "bread", 1;
     "emerald", 1; "mana potion", 1; "easter egg", 0] |> Map.ofList}; 
 
 let generateRandomMonsterName(state) = 
     state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
 
-let createMonster(xp, x, y, d, state) : Monster =
-    let hp = random.Next(10) + xp / 10 + 1
-    let xp = random.Next(10) + xp + 1
-    let gp =  random.Next(xp + 10)
-    let damage = random.Next(2) + xp / 100 + 1
-    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
+let createMonster(lvl, x, y, d, state) : Monster =
+    let hp = random.Next(10) + lvl * 2 + 1
+    let xp = random.Next(10) + lvl * 10 + 1
+    let gp =  random.Next(lvl + 10)
+    let damage = random.Next(2) + lvl + 1
+    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
 
 let toString(dir) =
     match dir with
@@ -133,7 +144,7 @@ let tileExists(x, y, state) =
     y >= 0 && y < state.map.Length && x >= 0 && x < state.map.[y].Length
 
 let monsterEncounter(state, x, y) =
-    let monster = createMonster(state.player.xp, x, y, getDirection("behind", state), state)
+    let monster = createMonster(state.player.lvl, x, y, getDirection("behind", state), state)
     monster.name + " appeared", {state with monsters = monster :: state.monsters}
 
 let rec monsterAt(monsters, x, y) =
@@ -216,7 +227,7 @@ let loot(state) =
 let damageMonster(state, monster, damage) =
     let newMonster = {monster with Monster.hp = monster.hp - damage}
     if(newMonster.hp <= 0) then
-        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters}
+        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters; player = addXP(state.player, monster.xp)}
        else
         let monsters = removeFromList monster state.monsters
         "You hit " + monster.name + " for " + damage.ToString(), {state with monsters = newMonster :: monsters}
