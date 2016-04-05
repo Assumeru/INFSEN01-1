@@ -8,7 +8,7 @@ namespace INFSEN01_1
 {
     class GameWrapper
     {
-        private const int SLEEP = 1000;
+        private const int SLEEP = 2000;
         private Func::Game.State state;
         private Thread thread;
 
@@ -17,12 +17,22 @@ namespace INFSEN01_1
             string map = System.IO.File.ReadAllText(file);
             string[] monsterNames = System.IO.File.ReadAllText(monsterNamesFile).Split('\n');
             string[] monsterPrefixes= System.IO.File.ReadAllText(monsterPrefixesFile).Split('\n');
-            state = Func::Game.createState(map.Split('\n'), Func::Game.createPlayer(0, 0, Func::Game.Direction.south), monsterPrefixes, monsterNames);
+            state = Func::Game.createState(ConvertMap(map.Split('\n')), Func::Game.createPlayer(0, 0, Func::Game.Direction.south), monsterPrefixes, monsterNames);
+        }
+
+        private char[][] ConvertMap(string[] map)
+        {
+            char[][] o = new char[map.Length][];
+            for(int i = 0; i < map.Length; i++)
+            {
+                o[i] = map[i].ToCharArray();
+            }
+            return o;
         }
 
         public void Run()
         {
-            //startBackgroundThread();
+            startBackgroundThread();
             while(true)
             {
                 string line = Console.ReadLine();
