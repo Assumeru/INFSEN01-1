@@ -98,7 +98,7 @@ let moveXY (dir, x, y, state) =
         else 
             let tile = state.map.[newY].[newX]
             match tile with
-            | 'o' -> actualMove(dir, state, newX, newY)
+            | 'o' | 'l' -> actualMove(dir, state, newX, newY)
             | 'g' -> (if(random.NextDouble() < 0.5) then
                             monsterEncounter(state, newX, newY)
                         else
@@ -123,6 +123,7 @@ let gazeAt(tile) =
     | 'o' -> "An empty corridor"
     | 'c' -> "A wall"
     | 'g' -> "An ominous passage"
+    | 'l' -> "A sparkling corridor"
     | _ -> "Something unknown"
 
 let lookXY (dir, x, y, state) =
@@ -145,6 +146,11 @@ let lookAround (state) =
     let positionsList = [Direction.north;Direction.east;Direction.south;Direction.west]
     lookList(positionsList, state)
 
+let loot(state) =
+    match state.map.[state.player.obj.y].[state.player.obj.x] with
+    | 'l' -> "You looted <items don't exist yet>", state
+    | _ -> "There is nothing to loot", state
+
 let parseCommand (x, state : State) =
     if(state.running) then
         match x with
@@ -164,6 +170,7 @@ let parseCommand (x, state : State) =
         | "walk" -> move(getDirection("ahead", state), state)
         | "fly" -> "People cannot fly", state
         | "commit suicide" -> "You have died..." , {state with running = false}
+        | "loot" -> loot(state)
         | _ -> ("Unknown command", state)
     else
         "Game over", state
