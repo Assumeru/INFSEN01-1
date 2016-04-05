@@ -20,6 +20,7 @@ type Player = {
     mp: int
     damage: int
     inv: Map<string, int>
+    lvl: int
 }
 
 type Monster = {
@@ -43,6 +44,16 @@ type State = {
 
 let random = System.Random()
 
+let addXP(player, xp) =
+    let player = {player with Player.xp = player.xp + xp}
+    let threshold = player.lvl * player.lvl * 10 + 10;
+    if(player.xp >= threshold) then
+        let player = {player with xp = player.xp - threshold; lvl = player.lvl + 1; damage = player.damage + 1; hp = player.hp}
+        printfn "You advanced to level %d" player.lvl
+        player
+    else
+        player
+
 let applyRandomEffect(state) =
     printfn("You eat the easter egg and wait for something to happen...")
     let randomEffect = [|"health boost"; "mana boost"; "exp boost"; "exp boost"; "exp boost"; "exp boost"; "damage"|]
@@ -50,7 +61,7 @@ let applyRandomEffect(state) =
     match effect with
     | "health boost" -> "You feel a glowing sensation, it heals you for 1hp!", {state with player={state.player with hp=state.player.hp + 1}}
     | "mana boost" -> "You feel a glowing sensation, it gives you 1mp!", {state with player={state.player with mp=state.player.mp + 1}}
-    | "exp boost" -> "You feel more experienced in the battlefield! +1xp", {state with player={state.player with xp=state.player.xp + 1}}
+    | "exp boost" -> "You feel more experienced in the battlefield! +1xp", {state with player=addXP(state.player, 1)}
     | "damage" -> "You don't feel so good, you got 1 damage", {state with player={state.player with xp=state.player.xp + 1}}
     | _-> "Que?", state
 
@@ -78,7 +89,7 @@ let itemAction(name, state) =
     | "bread" -> "You eat the loaf of bread, restoring 3hp", {state with player={state.player with hp=state.player.hp + 3; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "emerald" -> "You apply the emerald to your weapon, raising its damage by 1", {state with player={state.player with damage=state.player.damage + 1; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "mana potion" -> "You drink the mana potion, restoring 5mp", {state with player={state.player with mp=state.player.mp + 5; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
-    | "easter egg" -> applyRandomEffect(state)
+    | "easter egg" -> applyRandomEffect({state with player={state.player with inv=state.player.inv.Add(name, state.player.inv.[name]-1)}})
     | _ -> "You can't use that...", state
 
 let useItem(name, state) =
@@ -111,18 +122,18 @@ let createState(map, player, prefixes, names): State =
     {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
 
 let createPlayer(x, y, d : Direction) : Player =
-    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; damage = 10; inv = ["health potion", 2; "bread", 1;
+    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; damage = 10; lvl = 0; inv = ["health potion", 2; "bread", 1;
     "emerald", 1; "mana potion", 1; "easter egg", 0] |> Map.ofList}; 
 
 let generateRandomMonsterName(state) = 
     state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
 
-let createMonster(xp, x, y, d, state) : Monster =
-    let hp = random.Next(10) + xp / 10 + 1
-    let xp = random.Next(10) + xp + 1
-    let gp =  random.Next(xp + 10)
-    let damage = random.Next(2) + xp / 100 + 1
-    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
+let createMonster(lvl, x, y, d, state) : Monster =
+    let hp = random.Next(10) + lvl * 2 + 1
+    let xp = random.Next(10) + lvl * 10 + 1
+    let gp =  random.Next(lvl + 10)
+    let damage = random.Next(2) + lvl + 1
+    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
 
 let toString(dir) =
     match dir with
@@ -144,7 +155,7 @@ let tileExists(x, y, state) =
     y >= 0 && y < state.map.Length && x >= 0 && x < state.map.[y].Length
 
 let monsterEncounter(state, x, y) =
-    let monster = createMonster(state.player.xp, x, y, getDirection("behind", state), state)
+    let monster = createMonster(state.player.lvl, x, y, getDirection("behind", state), state)
     monster.name + " appeared", {state with monsters = monster :: state.monsters}
 
 let rec monsterAt(monsters, x, y) =
@@ -227,7 +238,7 @@ let loot(state) =
 let damageMonster(state, monster, damage) =
     let newMonster = {monster with Monster.hp = monster.hp - damage}
     if(newMonster.hp <= 0) then
-        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters}
+        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters; player = addXP(state.player, monster.xp)}
        else
         let monsters = removeFromList monster state.monsters
         "You hit " + monster.name + " for " + damage.ToString(), {state with monsters = newMonster :: monsters}

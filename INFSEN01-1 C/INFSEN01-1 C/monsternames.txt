@@ -5,6 +5,7 @@ Bat
 Bear
 Bison
 Blob
+Bunny
 Centaur
 Cobra
 Cockroach
