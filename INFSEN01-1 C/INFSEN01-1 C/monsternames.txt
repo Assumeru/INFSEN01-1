@@ -52,6 +52,7 @@ Priest
 Raptor
 Rat
 Riverbeast
+Semicolon
 Sheep
 Skeleton
 Slime
