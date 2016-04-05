@@ -46,7 +46,7 @@ let showInventory(state) =
         // 'k' is the key, 'v' is the value
         if(v > 0) then printfn "You find %i of %s" v k
     {state with player={state.player with inv=state.player.inv.Add("easter egg", state.player.inv.["easter egg"] + 1)}}
-        
+
 let examineItem(name, state) =
     if(state.player.inv.[name] > 0) then 
         match name with
@@ -179,8 +179,13 @@ let lookAround (state) =
     lookList(positionsList, state)
 
 let loot(state) =
+    let randomLoot = ["health potion"; "bread"; "emerald"; "mana potion"; "bread"; "bread"; "bread"; "mana potion"; "health potion"]
     match state.map.[state.player.obj.y].[state.player.obj.x] with
-    | 'l' -> "You looted <items don't exist yet>", state
+    | 'l' -> if(random.NextDouble() < 0.1) then
+                 let item = randomLoot.[random.Next(randomLoot.Length)]
+                 "You looted " + item, {state with player = {state.player with inv = state.player.inv.Add(item, state.player.inv.[item] + 1)}}
+             else
+                "You did not find any loot", state
     | _ -> "There is nothing to loot", state
 
 let parseCommand (x, state : State) =
