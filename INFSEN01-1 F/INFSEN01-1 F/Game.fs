@@ -63,7 +63,7 @@ let itemAction(name, state) =
     match name with
     | "health potion" -> "You drink the health potion, restoring 5hp", {state with player={state.player with hp=state.player.hp + 5; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "bread" -> "You eat the loaf of bread, restoring 3hp", {state with player={state.player with hp=state.player.hp + 3; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
-    | "emerald" -> "You apply the emerald to your weapon, raising its damage by 1", {state with player={state.player with hp=state.player.hp + 1; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
+    | "emerald" -> "You apply the emerald to your weapon, raising its damage by 1", {state with player={state.player with damage=state.player.damage + 1; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "mana potion" -> "You drink the mana potion, restoring 5mp", {state with player={state.player with mp=state.player.mp + 5; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "easter egg" -> "You eat the easter egg and wait for something to happen...", {state with player={state.player with inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | _ -> "You can't use that...", state
@@ -73,6 +73,19 @@ let useItem(name, state) =
         itemAction(name, state)
     else
         "You don't have this item in your inventory", state
+
+let rec getTotalItems(state) : int =
+    Map.fold (fun s key value -> s + value) 0 state.player.inv
+
+let showStats(state) = 
+    printfn "Player stats: "
+    printfn "hp: %i" state.player.hp    
+    printfn "mp: %i" state.player.mp   
+    printfn "gold: %i" state.player.gp   
+    printfn "xp: %i" state.player.xp   
+    printfn "damage: %i" state.player.damage  
+    printfn "You have %d items in your inventory" (getTotalItems(state))
+    state
 
 let random = System.Random()
 
@@ -287,6 +300,7 @@ let parseCommand (x, state : State) =
         | "examine emerald" -> examineItem("emerald", state)
         | "examine easter egg" -> examineItem("easter egg", state)
         | "inventory" -> "", showInventory(state)
+        | "stats" -> "", showStats(state)
         | _ -> ("Unknown command", state)
     else
         "Game over", state
