@@ -41,10 +41,6 @@ type State = {
     monsterNames: string[]
 }
 
-
-
-
-
 let showInventory(state) =
     printfn "You look in your inventory and find the following items: "
     for KeyValue(k, v) in state.player.inv do
@@ -146,6 +142,7 @@ let moveXY (dir, x, y, state) =
             match tile with
             | 'o' | 'l' -> actualMove(dir, state, newX, newY)
             | 'g' -> (if(random.NextDouble() < 0.5) then
+                            let state = {state with player = {state.player with obj = {state.player.obj with r = dir}}}
                             monsterEncounter(state, newX, newY)
                         else
                             actualMove(dir, state, newX, newY)
