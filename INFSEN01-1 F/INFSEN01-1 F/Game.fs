@@ -32,7 +32,7 @@ type Monster = {
 }
 
 type State = {
-    map: string[]
+    map: char[][]
     player: Player
     running: bool
     paused: bool
@@ -40,6 +40,9 @@ type State = {
     monsterPrefixes: string[]
     monsterNames: string[]
 }
+
+let changeTile(x, y, tile, state) =
+    state.map.[y].[x] <- tile
 
 let showInventory(state) =
     printfn "You look in your inventory and find the following items: "
@@ -69,7 +72,10 @@ let itemAction(name, state) =
     | _ -> "You can't use that...", state
 
 let useItem(name, state) =
-    if(state.player.inv.[name] > 0) then itemAction(name, state) else "You don't have this item in your inventory", state
+    if(state.player.inv.[name] > 0) then
+        itemAction(name, state)
+    else
+        "You don't have this item in your inventory", state
 
 let random = System.Random()
 
@@ -186,7 +192,7 @@ let lookAround (state) =
     lookList(positionsList, state)
 
 let loot(state) =
-    let randomLoot = ["health potion"; "bread"; "emerald"; "mana potion"; "bread"; "bread"; "bread"; "mana potion"; "health potion"]
+    let randomLoot = [|"health potion"; "bread"; "emerald"; "mana potion"; "bread"; "bread"; "bread"; "mana potion"; "health potion"|]
     match state.map.[state.player.obj.y].[state.player.obj.x] with
     | 'l' -> if(random.NextDouble() < 0.1) then
                  let item = randomLoot.[random.Next(randomLoot.Length)]
