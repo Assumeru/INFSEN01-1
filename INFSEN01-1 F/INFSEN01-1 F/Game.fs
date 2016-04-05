@@ -41,8 +41,9 @@ type State = {
     monsterNames: string[]
 }
 
-let changeTile(x, y, tile, state) =
-    state.map.[y].[x] <- tile
+
+
+
 
 let showInventory(state) =
     printfn "You look in your inventory and find the following items: "
@@ -169,6 +170,7 @@ let gazeAt(tile) =
     | 'c' -> "A wall"
     | 'g' -> "An ominous passage"
     | 'l' -> "A sparkling corridor"
+    | 'w' -> "A crumbled wall"
     | _ -> "Something unknown"
 
 let lookXY (dir, x, y, state) =
@@ -201,13 +203,16 @@ let loot(state) =
                 "You did not find any loot", state
     | _ -> "There is nothing to loot", state
     
-let attack(state, monster) =
-    let newMonster = {monster with Monster.hp = monster.hp - state.player.damage}
+let damageMonster(state, monster, damage) =
+    let newMonster = {monster with Monster.hp = monster.hp - damage}
     if(newMonster.hp <= 0) then
         "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters}
        else
         let monsters = removeFromList monster state.monsters
-        "You hit " + monster.name + " for " + state.player.damage.ToString(), {state with monsters = newMonster :: monsters}
+        "You hit " + monster.name + " for " + damage.ToString(), {state with monsters = newMonster :: monsters}
+
+let attack(state, monster) =
+    damageMonster(state, monster, state.player.damage)
 
 let rec getMonsterAt(monsters, x, y) =
     match monsters with
@@ -224,9 +229,36 @@ let attackDir(dir, x, y, state) =
     else
         "You take a swing at the empty air", state
 
+let changeTile(x, y, tile, state) =
+    state.map.[y].[x] <- tile
+
+let fireball(state, monster) =
+    damageMonster(state, monster, 100)
+
+let fireballDir(dir, x, y, state) =
+    let x = state.player.obj.x + x
+    let y = state.player.obj.y + y;
+    if (state.player.mp >= 3) then
+        let state = {state with player = {state.player with mp = state.player.mp - 3}}
+        if(tileExists(x, y, state)) then
+            let tile = state.map.[y].[x]
+            match tile with
+            | 'w' -> changeTile(x, y, 'o', state)
+                     "Your fireball destroyed a wall", state
+            | _ ->  match getMonsterAt(state.monsters, x, y) with
+                    | Some monster -> fireball(state, monster)
+                    | _ -> "You cast a fireball into the empty air", state
+        else
+            "You cast a fireball into the void", state
+    else
+        "You don't have enough mana to cast fireball", state
+
 let parseCommand (x, state : State) =
     if(state.running) then
         match x with
+        | "fireball" -> applyDir(getDirection("ahead", state), state, fireballDir)
+        | "fireball left" -> applyDir(getDirection("left", state), state, fireballDir)
+        | "fireball right" -> applyDir(getDirection("right", state), state, fireballDir)
         | "hit" -> applyDir(getDirection("ahead", state), state, attackDir)
         | "hit left" -> applyDir(getDirection("left", state), state, attackDir)
         | "hit right" -> applyDir(getDirection("right", state), state, attackDir)
