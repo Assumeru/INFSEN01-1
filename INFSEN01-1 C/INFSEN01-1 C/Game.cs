@@ -8,7 +8,7 @@ namespace INFSEN01_1
 {
     class GameWrapper
     {
-        private const int SLEEP = 1000;
+        private const int SLEEP = 2000;
         private Func::Game.State state;
         private Thread thread;
 
@@ -22,7 +22,7 @@ namespace INFSEN01_1
 
         public void Run()
         {
-            //startBackgroundThread();
+            startBackgroundThread();
             while(true)
             {
                 string line = Console.ReadLine();

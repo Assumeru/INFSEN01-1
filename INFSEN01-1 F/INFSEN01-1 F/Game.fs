@@ -81,19 +81,30 @@ let monsterEncounter(state, x, y) =
     let monster = createMonster(state.player.xp, x, y, getDirection("behind", state), state)
     monster.name + " appeared", {state with monsters = monster :: state.monsters}
 
+let rec monsterAt(monsters, x, y) =
+    match monsters with
+    | a::b -> if(a.obj.x = x && a.obj.y = y) then
+                    true
+                  else
+                    monsterAt(b, x, y)
+    | [] -> false
+
 let moveXY (dir, x, y, state) =
     let newX = state.player.obj.x + x
     let newY = state.player.obj.y + y
     if tileExists(newX, newY, state) then
-        let tile = state.map.[newY].[newX]
-        match tile with
-        | 'o' -> actualMove(dir, state, newX, newY)
-        | 'g' -> (if(random.NextDouble() < 0.5) then
-                        monsterEncounter(state, newX, newY)
-                    else
-                        actualMove(dir, state, newX, newY)
-                    )
-        | _ -> "Your path is blocked", state
+        if(monsterAt(state.monsters, newX, newY)) then
+            "A monster is blocking your path", state
+        else 
+            let tile = state.map.[newY].[newX]
+            match tile with
+            | 'o' -> actualMove(dir, state, newX, newY)
+            | 'g' -> (if(random.NextDouble() < 0.5) then
+                            monsterEncounter(state, newX, newY)
+                        else
+                            actualMove(dir, state, newX, newY)
+                        )
+            | _ -> "Your path is blocked", state
     else
         "You cannot go that way", state
 
@@ -106,14 +117,6 @@ let applyDir(dir, state, func) =
 
 let move (dir, state) =
     applyDir(dir, state, moveXY)
-
-let checkSurrounding (dir, x, y, state) =
-    let x = state.player.obj.x 
-    let y = state.player.obj.y
-    if x < 0 || y >= state.map.Length || x < 0 || x >= state.map.[y].Length then
-        "You cannot go to " + dir, state
-    else
-        "You can move to " + dir, state
 
 let gazeAt(tile) =
     match tile with
@@ -143,25 +146,42 @@ let lookAround (state) =
     lookList(positionsList, state)
 
 let parseCommand (x, state : State) =
-    match x with
-    | "stop" -> ("Bye", {state with running = false})
-    | "north" -> move(Direction.north, state)
-    | "east" -> move(Direction.east, state)
-    | "south" -> move(Direction.south, state)
-    | "west" -> move(Direction.west, state)
-    | "look around" -> lookAround(state), state
-    | "look left" -> look(getDirection("left", state), state), state
-    | "look right" -> look(getDirection("right", state), state), state
-    | "look behind" -> look(getDirection("behind", state), state), state
-    | "look ahead" -> look(getDirection("ahead", state), state), state
-    | "turn left" -> "You turned left", {state with player = {state.player with obj = {state.player.obj with r = getDirection("left", state)}}}
-    | "turn right" -> "You turned right", {state with player = {state.player with obj = {state.player.obj with r = getDirection("right", state)}}}
-    | "turn around" -> "You turned around", {state with player = {state.player with obj = {state.player.obj with r = getDirection("behind", state)}}}
-    | "walk" -> move(getDirection("ahead", state), state)
-    | "fly" -> "People cannot fly", state
-    | "commit suicide" -> "You have died..." , {state with running = false}
-    | _ -> ("Unknown command", state)
+    if(state.running) then
+        match x with
+        | "stop" -> ("Bye", {state with running = false})
+        | "north" -> move(Direction.north, state)
+        | "east" -> move(Direction.east, state)
+        | "south" -> move(Direction.south, state)
+        | "west" -> move(Direction.west, state)
+        | "look around" -> lookAround(state), state
+        | "look left" -> look(getDirection("left", state), state), state
+        | "look right" -> look(getDirection("right", state), state), state
+        | "look behind" -> look(getDirection("behind", state), state), state
+        | "look ahead" -> look(getDirection("ahead", state), state), state
+        | "turn left" -> "You turned left", {state with player = {state.player with obj = {state.player.obj with r = getDirection("left", state)}}}
+        | "turn right" -> "You turned right", {state with player = {state.player with obj = {state.player.obj with r = getDirection("right", state)}}}
+        | "turn around" -> "You turned around", {state with player = {state.player with obj = {state.player.obj with r = getDirection("behind", state)}}}
+        | "walk" -> move(getDirection("ahead", state), state)
+        | "fly" -> "People cannot fly", state
+        | "commit suicide" -> "You have died..." , {state with running = false}
+        | _ -> ("Unknown command", state)
+    else
+        "Game over", state
+
+let monsterHitPlayer(state, monster) =
+    printfn "%s hit you for %d" monster.name monster.damage
+    let state = {state with player = {state.player with hp = state.player.hp - monster.damage}}
+    if(state.player.hp <= 0) then
+        printfn "You died"
+        {state with running = false}
+    else
+        state
+
+let rec hitPlayer(state, monsters) =
+    match monsters with
+    | a::b -> hitPlayer(monsterHitPlayer(state, a), b)
+    | [] -> state
 
 let runFrame (state: State) =
-    printfn "(%d, %d)" state.player.obj.x state.player.obj.y
+    let state = hitPlayer(state, state.monsters)
     state
