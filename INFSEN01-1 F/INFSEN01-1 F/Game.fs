@@ -18,6 +18,7 @@ type Player = {
     xp: int
     gp: int
     mp: int
+    damage: int
 }
 
 type Monster = {
@@ -52,7 +53,7 @@ let createState(map, player, prefixes, names): State =
     {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
 
 let createPlayer(x, y, d : Direction) : Player =
-    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10}
+    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; damage = 10}
 
 let generateRandomMonsterName(state) = 
     state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
@@ -176,6 +177,22 @@ let monsterHitPlayer(state, monster) =
         {state with running = false}
     else
         state
+
+let rec removeFromList n list =
+    match list with
+    | h::t1 when h = n -> t1
+    | h::t1 -> h :: (removeFromList n t1)
+    | []    -> []
+
+let attack(state, monster) =
+    printfn "You hit %s for %d" monster.name state.player.damage
+    let newMonster = {monster with hp = monster.hp - state.player.damage}
+    if(newMonster.hp <= 0) then
+        printfn "You killed %s" monster.name       
+        {state with monsters = removeFromList monster state.monsters}
+       else
+        let monsters = removeFromList monster state.monsters
+        {state with monsters = newMonster :: monsters}
 
 let objectNextTo(a, b) =
     abs(a.x - b.x) + abs(a.y - b.y) < 2
