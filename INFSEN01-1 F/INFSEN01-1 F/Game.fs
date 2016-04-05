@@ -177,9 +177,15 @@ let monsterHitPlayer(state, monster) =
     else
         state
 
+let objectNextTo(a, b) =
+    abs(a.x - b.x) + abs(a.y - b.y) < 2
+
 let rec hitPlayer(state, monsters) =
     match monsters with
-    | a::b -> hitPlayer(monsterHitPlayer(state, a), b)
+    | a::b -> if(objectNextTo(state.player.obj, a.obj)) then
+                    hitPlayer(monsterHitPlayer(state, a), b)
+                else
+                    hitPlayer(state, b)
     | [] -> state
 
 let runFrame (state: State) =
