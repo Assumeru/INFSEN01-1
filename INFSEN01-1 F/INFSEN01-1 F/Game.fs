@@ -239,10 +239,21 @@ let loot(state) =
                 "You did not find any loot", state
     | _ -> "There is nothing to loot", state
     
+let lootMonster(state,monster) =
+    let randomLoot = [|"health potion"; "bread"; "emerald"; "mana potion"; "bread"; "bread"; "bread"; "mana potion"; "health potion"|]
+    let goldAmount = monster.gp
+    let item = ""
+    if(random.NextDouble() < 0.1) then
+        let item = randomLoot.[random.Next(randomLoot.Length)]
+        ()
+    (goldAmount,item)
+
 let damageMonster(state, monster, damage) =
     let newMonster = {monster with Monster.hp = monster.hp - damage}
     if(newMonster.hp <= 0) then
-        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters}
+       let looted = lootMonster(state,monster)
+        
+       ("You Looted %i gp \n You killed %s"; (fst looted) ;monster.name)  , {state with monsters = removeFromList monster state.monsters}
        else
         let monsters = removeFromList monster state.monsters
         "You hit " + monster.name + " for " + damage.ToString(), {state with monsters = newMonster :: monsters}
