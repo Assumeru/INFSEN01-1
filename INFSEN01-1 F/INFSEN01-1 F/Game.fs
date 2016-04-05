@@ -42,9 +42,6 @@ type State = {
     commands: string[]
 }
 
-let changeTile(x, y, tile, state) =
-    state.map.[y].[x] <- tile
-
 let showInventory(state) =
     printfn "You look in your inventory and find the following items: "
     for KeyValue(k, v) in state.player.inv do
@@ -67,7 +64,7 @@ let itemAction(name, state) =
     match name with
     | "health potion" -> "You drink the health potion, restoring 5hp", {state with player={state.player with hp=state.player.hp + 5; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "bread" -> "You eat the loaf of bread, restoring 3hp", {state with player={state.player with hp=state.player.hp + 3; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
-    | "emerald" -> "You apply the emerald to your weapon, raising its damage by 1", {state with player={state.player with hp=state.player.hp + 1; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
+    | "emerald" -> "You apply the emerald to your weapon, raising its damage by 1", {state with player={state.player with damage=state.player.damage + 1; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "mana potion" -> "You drink the mana potion, restoring 5mp", {state with player={state.player with mp=state.player.mp + 5; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | "easter egg" -> "You eat the easter egg and wait for something to happen...", {state with player={state.player with inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
     | _ -> "You can't use that...", state
@@ -77,6 +74,19 @@ let useItem(name, state) =
         itemAction(name, state)
     else
         "You don't have this item in your inventory", state
+
+let rec getTotalItems(state) : int =
+    Map.fold (fun s key value -> s + value) 0 state.player.inv
+
+let showStats(state) = 
+    printfn "Player stats: "
+    printfn "hp: %i" state.player.hp    
+    printfn "mp: %i" state.player.mp   
+    printfn "gold: %i" state.player.gp   
+    printfn "xp: %i" state.player.xp   
+    printfn "damage: %i" state.player.damage  
+    printfn "You have %d items in your inventory" (getTotalItems(state))
+    state
 
 let random = System.Random()
 
@@ -147,6 +157,7 @@ let moveXY (dir, x, y, state) =
             match tile with
             | 'o' | 'l' -> actualMove(dir, state, newX, newY)
             | 'g' -> (if(random.NextDouble() < 0.5) then
+                            let state = {state with player = {state.player with obj = {state.player.obj with r = dir}}}
                             monsterEncounter(state, newX, newY)
                         else
                             actualMove(dir, state, newX, newY)
@@ -171,6 +182,7 @@ let gazeAt(tile) =
     | 'c' -> "A wall"
     | 'g' -> "An ominous passage"
     | 'l' -> "A sparkling corridor"
+    | 'w' -> "A crumbled wall"
     | _ -> "Something unknown"
 
 let lookXY (dir, x, y, state) =
@@ -227,13 +239,16 @@ let loot(state) =
                 "You did not find any loot", state
     | _ -> "There is nothing to loot", state
     
-let attack(state, monster) =
-    let newMonster = {monster with Monster.hp = monster.hp - state.player.damage}
+let damageMonster(state, monster, damage) =
+    let newMonster = {monster with Monster.hp = monster.hp - damage}
     if(newMonster.hp <= 0) then
         "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters}
        else
         let monsters = removeFromList monster state.monsters
-        "You hit " + monster.name + " for " + state.player.damage.ToString(), {state with monsters = newMonster :: monsters}
+        "You hit " + monster.name + " for " + damage.ToString(), {state with monsters = newMonster :: monsters}
+
+let attack(state, monster) =
+    damageMonster(state, monster, state.player.damage)
 
 let rec getMonsterAt(monsters, x, y) =
     match monsters with
@@ -250,10 +265,37 @@ let attackDir(dir, x, y, state) =
     else
         "You take a swing at the empty air", state
 
+let changeTile(x, y, tile, state) =
+    state.map.[y].[x] <- tile
+
+let fireball(state, monster) =
+    damageMonster(state, monster, 100)
+
+let fireballDir(dir, x, y, state) =
+    let x = state.player.obj.x + x
+    let y = state.player.obj.y + y;
+    if (state.player.mp >= 3) then
+        let state = {state with player = {state.player with mp = state.player.mp - 3}}
+        if(tileExists(x, y, state)) then
+            let tile = state.map.[y].[x]
+            match tile with
+            | 'w' -> changeTile(x, y, 'o', state)
+                     "Your fireball destroyed a wall", state
+            | _ ->  match getMonsterAt(state.monsters, x, y) with
+                    | Some monster -> fireball(state, monster)
+                    | _ -> "You cast a fireball into the empty air", state
+        else
+            "You cast a fireball into the void", state
+    else
+        "You don't have enough mana to cast fireball", state
+
 let parseCommand (x, state : State) =
     if(state.running) then
         let commands = helpCommandsNormalState(state)
         match x with
+        | "fireball" -> applyDir(getDirection("ahead", state), state, fireballDir)
+        | "fireball left" -> applyDir(getDirection("left", state), state, fireballDir)
+        | "fireball right" -> applyDir(getDirection("right", state), state, fireballDir)
         | "hit" -> applyDir(getDirection("ahead", state), state, attackDir)
         | "hit left" -> applyDir(getDirection("left", state), state, attackDir)
         | "hit right" -> applyDir(getDirection("right", state), state, attackDir)
@@ -286,6 +328,7 @@ let parseCommand (x, state : State) =
         | "examine easter egg" -> examineItem("easter egg", state)
         | "inventory" -> "", showInventory(state)
         | "help" -> (commands|> String.concat "\n",state)
+        | "stats" -> "", showStats(state)
         | _ -> ("Unknown command", state)
     else
         "Game over", state
