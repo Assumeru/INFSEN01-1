@@ -87,7 +87,6 @@ let createPlayer(x, y, d : Direction) : Player =
     {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; damage = 10; inv = ["health potion", 2; "bread", 1;
     "emerald", 1; "mana potion", 1; "easter egg", 0] |> Map.ofList}; 
 
-
 let generateRandomMonsterName(state) = 
     state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
 
@@ -104,6 +103,12 @@ let toString(dir) =
     | Direction.east -> "east"
     | Direction.south -> "south"
     | Direction.west -> "west"
+
+let rec removeFromList n list =
+    match list with
+    | h::t1 when h = n -> t1
+    | h::t1 -> h :: (removeFromList n t1)
+    | []    -> []
 
 let actualMove(dir, state, newX, newY) = 
     ("You moved " + toString(dir), {state with player = {state.player with obj = {x = newX; y = newY; r = dir}}})
@@ -189,11 +194,37 @@ let loot(state) =
              else
                 "You did not find any loot", state
     | _ -> "There is nothing to loot", state
+    
+let attack(state, monster) =
+    let newMonster = {monster with Monster.hp = monster.hp - state.player.damage}
+    if(newMonster.hp <= 0) then
+        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters}
+       else
+        let monsters = removeFromList monster state.monsters
+        "You hit " + monster.name + " for " + state.player.damage.ToString(), {state with monsters = newMonster :: monsters}
+
+let rec getMonsterAt(monsters, x, y) =
+    match monsters with
+    | a::b -> if(a.obj.x = x && a.obj.y = y) then Some a else getMonsterAt(b, x, y)
+    | [] -> None
+
+let attackDir(dir, x, y, state) =
+    let x = state.player.obj.x + x
+    let y = state.player.obj.y + y;
+    if(tileExists(x, y, state)) then
+        match getMonsterAt(state.monsters, x, y) with
+        | Some monster -> attack(state, monster)
+        | _ -> "You take a swing at the empty air", state
+    else
+        "You take a swing at the empty air", state
 
 let parseCommand (x, state : State) =
     if(state.running) then
         match x with
-        | "stop" -> ("Bye", {state with running = false})
+        | "hit" -> applyDir(getDirection("ahead", state), state, attackDir)
+        | "hit left" -> applyDir(getDirection("left", state), state, attackDir)
+        | "hit right" -> applyDir(getDirection("right", state), state, attackDir)
+        | "stop" -> "Bye", {state with running = false}
         | "north" -> move(Direction.north, state)
         | "east" -> move(Direction.east, state)
         | "south" -> move(Direction.south, state)
@@ -233,22 +264,6 @@ let monsterHitPlayer(state, monster) =
         {state with running = false}
     else
         state
-
-let rec removeFromList n list =
-    match list with
-    | h::t1 when h = n -> t1
-    | h::t1 -> h :: (removeFromList n t1)
-    | []    -> []
-
-let attack(state, monster) =
-    printfn "You hit %s for %d" monster.name state.player.damage
-    let newMonster = {monster with hp = monster.hp - state.player.damage}
-    if(newMonster.hp <= 0) then
-        printfn "You killed %s" monster.name       
-        {state with monsters = removeFromList monster state.monsters}
-       else
-        let monsters = removeFromList monster state.monsters
-        {state with monsters = newMonster :: monsters}
 
 let objectNextTo(a, b) =
     abs(a.x - b.x) + abs(a.y - b.y) < 2
