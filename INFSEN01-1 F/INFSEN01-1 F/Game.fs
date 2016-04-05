@@ -130,13 +130,6 @@ let createPlayer(x, y, d : Direction) : Player =
 let generateRandomMonsterName(state) = 
      state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
 
-let createMonster(xp, x, y, d, state) : Monster =
-    let hp = random.Next(10) + xp / 10 + 1
-    let xp = random.Next(10) + xp + 1
-    let gp =  random.Next(xp + 10)
-    let damage = random.Next(2) + xp / 100 + 1
-    let name = generateRandomMonsterName(state);
-    {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp ; gp = gp; damage = damage; name = name;}
 let createMonster(lvl, x, y, d, state) : Monster =
     let hp = random.Next(10) + lvl * 3 + 10
     let xp = random.Next(10) + lvl * 10 + 1
