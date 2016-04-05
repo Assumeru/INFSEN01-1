@@ -1,5 +1,6 @@
 Amazing
 Ancient
+Angry
 Aromatic
 Baby
 Bad
@@ -18,6 +19,7 @@ Dasterdly
 Dire
 Drained
 Drunk
+Easter
 Electric
 Elemental
 Epic

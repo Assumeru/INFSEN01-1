@@ -5,6 +5,7 @@ Bat
 Bear
 Bison
 Blob
+Bunny
 Centaur
 Cobra
 Cockroach
@@ -51,6 +52,7 @@ Priest
 Raptor
 Rat
 Riverbeast
+Semicolon
 Sheep
 Skeleton
 Slime
