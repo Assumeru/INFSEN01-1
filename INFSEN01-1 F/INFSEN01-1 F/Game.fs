@@ -18,6 +18,7 @@ type Player = {
     xp: int
     gp: int
     mp: int
+    inv: Map<string, int>
 }
 
 type Monster = {
@@ -39,6 +40,36 @@ type State = {
     monsterNames: string[]
 }
 
+let showInventory(state) =
+    printfn "You look in your inventory and find the following items: "
+    for KeyValue(k, v) in state.player.inv do
+        // 'k' is the key, 'v' is the value
+        if(v > 0) then printfn "You find %i of %s" v k
+    {state with player={state.player with inv=state.player.inv.Add("easter egg", state.player.inv.["easter egg"] + 1)}}
+        
+let examineItem(name, state) =
+    if(state.player.inv.[name] > 0) then 
+        match name with
+        | "health potion" -> "You examine the health potion, the liquid seems to be glowing", state
+        | "bread" -> "You examine the loaf of bread, it looks tasty!", state
+        | "emerald" -> "You examine the emerald, it looks like it would improve your weapon!", state
+        | "mana potion" -> "You examine the mana potion, the liquid seems to be glowing", state
+        | "easter egg" -> "You examine the easter egg, how did i acquire this again?", state
+        | _ -> "You can't examine that...", state
+    else "You don't have this item in your inventory", state
+
+let itemAction(name, state) = 
+    match name with
+    | "health potion" -> "You drink the health potion, restoring 5hp", {state with player={state.player with hp=state.player.hp + 5; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
+    | "bread" -> "You eat the loaf of bread, restoring 3hp", {state with player={state.player with hp=state.player.hp + 3; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
+    | "emerald" -> "You apply the emerald to your weapon, raising its damage by 1", {state with player={state.player with hp=state.player.hp + 1; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
+    | "mana potion" -> "You drink the mana potion, restoring 5mp", {state with player={state.player with mp=state.player.mp + 5; inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
+    | "easter egg" -> "You eat the easter egg and wait for something to happen...", {state with player={state.player with inv=state.player.inv.Add(name, state.player.inv.[name]-1)}}
+    | _ -> "You can't use that...", state
+
+let useItem(name, state) =
+    if(state.player.inv.[name] > 0) then itemAction(name, state) else "You don't have this item in your inventory", state
+
 let random = System.Random()
 
 let getDirection(dir, state) =
@@ -52,7 +83,8 @@ let createState(map, player, prefixes, names): State =
     {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
 
 let createPlayer(x, y, d : Direction) : Player =
-    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10}
+    {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; inv = ["health potion", 2; "bread", 1;
+    "emerald", 1; "mana potion", 1; "easter egg", 0] |> Map.ofList}
 
 let generateRandomMonsterName(state) = 
     state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
@@ -171,6 +203,17 @@ let parseCommand (x, state : State) =
         | "fly" -> "People cannot fly", state
         | "commit suicide" -> "You have died..." , {state with running = false}
         | "loot" -> loot(state)
+        | "use health potion" -> useItem("health potion", state)
+        | "use mana potion" -> useItem("mana potion", state)
+        | "eat bread" -> useItem("bread", state)
+        | "use emerald" -> useItem("emerald", state)
+        | "eat easter egg" -> useItem("easter egg", state)
+        | "examine health potion" -> examineItem("health potion", state)
+        | "examine mana potion" -> examineItem("mana potion", state)
+        | "examine bread" -> examineItem("bread", state)
+        | "examine emerald" -> examineItem("emerald", state)
+        | "examine easter egg" -> examineItem("easter egg", state)
+        | "inventory" -> "", showInventory(state)
         | _ -> ("Unknown command", state)
     else
         "Game over", state
