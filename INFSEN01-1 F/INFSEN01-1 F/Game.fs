@@ -40,6 +40,7 @@ type State = {
     monsters: List<Monster> 
     monsterPrefixes: string[]
     monsterNames: string[]
+    commands: string[]
 }
 
 let random = System.Random()
@@ -120,14 +121,14 @@ let getDirection(dir, state) =
     | _ -> state.player.obj.r
 
 let createState(map, player, prefixes, names): State =
-    {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names}
+    {map = map; player = player; running = true; paused = false; monsters = []; monsterPrefixes = prefixes; monsterNames = names; commands = [|""|]}
 
 let createPlayer(x, y, d : Direction) : Player =
     {obj = {x = x; y = y; r = d}; hp = 10; xp = 0; gp = 0; mp = 10; damage = 10; lvl = 0; inv = ["health potion", 2; "bread", 1;
     "emerald", 1; "mana potion", 1; "easter egg", 0] |> Map.ofList}; 
 
 let generateRandomMonsterName(state) = 
-    state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
+     state.monsterPrefixes.[random.Next(state.monsterPrefixes.Length)] + " " + state.monsterNames.[random.Next(state.monsterNames.Length)]
 
 let createMonster(lvl, x, y, d, state) : Monster =
     let hp = random.Next(10) + lvl * 3 + 10
@@ -228,6 +229,30 @@ let lookAround (state) =
     let positionsList = [Direction.north;Direction.east;Direction.south;Direction.west]
     lookList(positionsList, state)
 
+let helpCommandsNormalState(state) = 
+    [|
+    "the following commands are available:";
+    "=========";
+    "stop";
+    "north";
+    "east";
+    "south";
+    "west";
+    "look around";
+    "look left";
+    "look right";
+    "look behind";
+    "look ahead";
+    "turn left";
+    "turn right";
+    "turn around";
+    "walk";
+    "fly";
+    "commit suicide";
+    "help";
+    "=========";
+    |]
+
 let loot(state) =
     let randomLoot = [|"health potion"; "bread"; "emerald"; "mana potion"; "bread"; "bread"; "bread"; "mana potion"; "health potion"|]
     match state.map.[state.player.obj.y].[state.player.obj.x] with
@@ -238,11 +263,24 @@ let loot(state) =
                 "You did not find any loot", state
     | _ -> "There is nothing to loot", state
     
+let lootMonster(state,monster) =
+    let randomLoot = [|"health potion"; "bread"; "emerald"; "mana potion"; "bread"; "bread"; "bread"; "mana potion"; "health potion"|]
+    let goldAmount = monster.gp
+    if(random.NextDouble() < 0.9) then
+        let item = randomLoot.[random.Next(randomLoot.Length)]
+        printf "You looted %d gp and %s \n" goldAmount item ;
+        {state with player = {state.player with Player.gp= state.player.gp + goldAmount; Player.inv = state.player.inv.Add(item, state.player.inv.[item] + 1)}}
+        
+    else
+        printf "You looted %d gp \n" goldAmount;
+        {state with player = {state.player with Player.gp= state.player.gp + goldAmount}}
+
 let damageMonster(state, monster, damage) =
     let newMonster = {monster with Monster.hp = monster.hp - damage}
     if(newMonster.hp <= 0) then
-        "You killed " + monster.name, {state with monsters = removeFromList monster state.monsters; player = addXP(state.player, monster.xp)}
-       else
+        let newState = lootMonster(state,newMonster)
+        "You killed " + monster.name ,{newState with monsters = removeFromList monster newState.monsters; player = addXP(newState.player, monster.xp)}
+    else
         let monsters = removeFromList monster state.monsters
         "You hit " + monster.name + " for " + damage.ToString(), {state with monsters = newMonster :: monsters}
 
@@ -290,6 +328,7 @@ let fireballDir(dir, x, y, state) =
 
 let parseCommand (x, state : State) =
     if(state.running) then
+        let commands = helpCommandsNormalState(state)
         match x with
         | "fireball" -> applyDir(getDirection("ahead", state), state, fireballDir)
         | "fireball left" -> applyDir(getDirection("left", state), state, fireballDir)
@@ -325,6 +364,7 @@ let parseCommand (x, state : State) =
         | "examine emerald" -> examineItem("emerald", state)
         | "examine easter egg" -> examineItem("easter egg", state)
         | "inventory" -> "", showInventory(state)
+        | "help" -> (commands|> String.concat "\n",state)
         | "stats" -> "", showStats(state)
         | _ -> ("Unknown command", state)
     else
