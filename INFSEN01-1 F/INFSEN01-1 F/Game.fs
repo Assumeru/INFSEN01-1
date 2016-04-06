@@ -207,6 +207,7 @@ let gazeAt(tile) =
     | 'g' -> "An ominous passage"
     | 'l' -> "A sparkling corridor"
     | 'w' -> "A crumbled wall"
+    | 'S' -> "A small store"
     | _ -> "Something unknown"
 
 let lookXY (dir, x, y, state) =
@@ -326,6 +327,28 @@ let fireballDir(dir, x, y, state) =
     else
         "You don't have enough mana to cast fireball", state
 
+let rec objNextTo(tiles, obj, tile, state) =
+    match tiles with
+    | (x, y)::l -> let x' = obj.x + x
+                   let y' = obj.y + y
+                   if(tileExists(x', y', state)) then
+                       if(state.map.[x'].[y'] = tile) then
+                            true
+                       else
+                            objNextTo(l, obj, tile, state)
+                   else
+                       objNextTo(l, obj, tile, state)
+    | _ -> false
+
+let buy(item, price, state) =
+    if(objNextTo([(1, 0); (0, 1); (-1, 0); (0, -1)], state.player.obj, 'S', state)) then
+        if(price > state.player.gp) then
+            "You need " + price.ToString() + " gold to buy this item", state
+        else
+            item + " bought for " + price.ToString(), {state with player = {state.player with gp = state.player.gp - price; inv = state.player.inv.Add(item, state.player.inv.[item])}}
+    else
+        "There is no store here", state
+
 let parseCommand (x, state : State) =
     if(state.running) then
         let commands = helpCommandsNormalState(state)
@@ -333,10 +356,10 @@ let parseCommand (x, state : State) =
         | "fireball" -> applyDir(getDirection("ahead", state), state, fireballDir)
         | "fireball left" -> applyDir(getDirection("left", state), state, fireballDir)
         | "fireball right" -> applyDir(getDirection("right", state), state, fireballDir)
-        | "hit" -> applyDir(getDirection("ahead", state), state, attackDir)
+        | "hit" | "attack" -> applyDir(getDirection("ahead", state), state, attackDir)
         | "hit left" -> applyDir(getDirection("left", state), state, attackDir)
         | "hit right" -> applyDir(getDirection("right", state), state, attackDir)
-        | "stop" -> "Bye", {state with running = false}
+        | "stop" | "quit" | "gtfo" -> "Bye", {state with running = false}
         | "north" -> move(Direction.north, state)
         | "east" -> move(Direction.east, state)
         | "south" -> move(Direction.south, state)
@@ -349,15 +372,15 @@ let parseCommand (x, state : State) =
         | "turn left" -> "You turned left", {state with player = {state.player with obj = {state.player.obj with r = getDirection("left", state)}}}
         | "turn right" -> "You turned right", {state with player = {state.player with obj = {state.player.obj with r = getDirection("right", state)}}}
         | "turn around" -> "You turned around", {state with player = {state.player with obj = {state.player.obj with r = getDirection("behind", state)}}}
-        | "walk" -> move(getDirection("ahead", state), state)
+        | "walk" | "move" -> move(getDirection("ahead", state), state)
         | "fly" -> "People cannot fly", state
         | "commit suicide" -> "You have died..." , {state with running = false}
         | "loot" -> loot(state)
-        | "use health potion" -> useItem("health potion", state)
-        | "use mana potion" -> useItem("mana potion", state)
-        | "eat bread" -> useItem("bread", state)
+        | "use health potion" | "drink health potion" | "heal" -> useItem("health potion", state)
+        | "use mana potion" | "drink mana potion" -> useItem("mana potion", state)
+        | "eat bread" | "use bread" -> useItem("bread", state)
         | "use emerald" -> useItem("emerald", state)
-        | "eat easter egg" -> useItem("easter egg", state)
+        | "eat easter egg" | "use easter egg" -> useItem("easter egg", state)
         | "examine health potion" -> examineItem("health potion", state)
         | "examine mana potion" -> examineItem("mana potion", state)
         | "examine bread" -> examineItem("bread", state)
@@ -366,6 +389,10 @@ let parseCommand (x, state : State) =
         | "inventory" -> "", showInventory(state)
         | "help" -> (commands|> String.concat "\n",state)
         | "stats" -> "", showStats(state)
+        | "buy health potion" -> buy("health potion", 20, state)
+        | "buy mana potion" -> buy("mana potion", 15, state)
+        | "buy bread" -> buy("bread", 10, state)
+        | "buy emerald" -> buy("emerald", 100, state)
         | _ -> ("Unknown command", state)
     else
         "Game over", state

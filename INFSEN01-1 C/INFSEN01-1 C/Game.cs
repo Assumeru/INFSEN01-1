@@ -35,10 +35,13 @@ namespace INFSEN01_1
             startBackgroundThread();
             while(true)
             {
-                string line = Console.ReadLine();
+                string line = Console.ReadLine().ToLower();
                 var output = Func::Game.parseCommand(line, state);
-                String strippedOutput = output.Item1.Replace("\r", string.Empty).Replace("\n", string.Empty);
-                Console.WriteLine(strippedOutput);
+                string[] strippedOutput = output.Item1.Replace("\r", string.Empty).Split('\n');
+                foreach(string o in strippedOutput)
+                {
+                    Console.WriteLine(o);
+                }
                 state = output.Item2;
                 if (!state.running)
                 {
