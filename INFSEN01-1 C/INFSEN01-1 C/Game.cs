@@ -1,8 +1,8 @@
 ﻿extern alias Func;
 
 using System;
-using System.Linq;
 using System.Threading;
+
 
 namespace INFSEN01_1
 {
@@ -37,7 +37,8 @@ namespace INFSEN01_1
             {
                 string line = Console.ReadLine();
                 var output = Func::Game.parseCommand(line, state);
-                Console.WriteLine(output.Item1);
+                String strippedOutput = output.Item1.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                Console.WriteLine(strippedOutput);
                 state = output.Item2;
                 if (!state.running)
                 {

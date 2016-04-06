@@ -136,6 +136,7 @@ let createMonster(lvl, x, y, d, state) : Monster =
     let damage = random.Next(2) + lvl + 1
     {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
 
+
 let toString(dir) =
     match dir with
     | Direction.north -> "north"
@@ -158,6 +159,7 @@ let tileExists(x, y, state) =
 let monsterEncounter(state, x, y) =
     let monster = createMonster(state.player.lvl, x, y, getDirection("behind", state), state)
     monster.name + " appeared", {state with monsters = monster :: state.monsters}
+   
 
 let rec monsterAt(monsters, x, y) =
     match monsters with
