@@ -356,15 +356,19 @@ let parseCommand (x, state : State) =
         | "fireball" -> applyDir(getDirection("ahead", state), state, fireballDir)
         | "fireball left" -> applyDir(getDirection("left", state), state, fireballDir)
         | "fireball right" -> applyDir(getDirection("right", state), state, fireballDir)
-        | "hit" | "attack" -> applyDir(getDirection("ahead", state), state, attackDir)
-        | "hit left" -> applyDir(getDirection("left", state), state, attackDir)
-        | "hit right" -> applyDir(getDirection("right", state), state, attackDir)
+        | "hit" | "attack" | "punch" | "kick" -> applyDir(getDirection("ahead", state), state, attackDir)
+        | "hit left" | "attack left" | "punch left" | "kick left" -> applyDir(getDirection("left", state), state, attackDir)
+        | "hit right" | "attack right" | "punch right" | "kick right" -> applyDir(getDirection("right", state), state, attackDir)
         | "stop" | "quit" | "gtfo" -> "Bye", {state with running = false}
         | "north" -> move(Direction.north, state)
         | "east" -> move(Direction.east, state)
         | "south" -> move(Direction.south, state)
         | "west" -> move(Direction.west, state)
         | "look around" -> lookAround(state), state
+        | "look north" -> look(Direction.north, state), state
+        | "look east" -> look(Direction.east, state), state
+        | "look south" -> look(Direction.south, state), state
+        | "look west" -> look(Direction.west, state), state
         | "look left" -> look(getDirection("left", state), state), state
         | "look right" -> look(getDirection("right", state), state), state
         | "look behind" -> look(getDirection("behind", state), state), state
@@ -372,10 +376,11 @@ let parseCommand (x, state : State) =
         | "turn left" -> "You turned left", {state with player = {state.player with obj = {state.player.obj with r = getDirection("left", state)}}}
         | "turn right" -> "You turned right", {state with player = {state.player with obj = {state.player.obj with r = getDirection("right", state)}}}
         | "turn around" -> "You turned around", {state with player = {state.player with obj = {state.player.obj with r = getDirection("behind", state)}}}
-        | "walk" | "move" -> move(getDirection("ahead", state), state)
+        | "walk" | "move" | "run" -> move(getDirection("ahead", state), state)
         | "fly" -> "People cannot fly", state
         | "commit suicide" -> "You have died..." , {state with running = false}
         | "loot" -> loot(state)
+        | "use" | "examine" -> "No item specified", state
         | "use health potion" | "drink health potion" | "heal" -> useItem("health potion", state)
         | "use mana potion" | "drink mana potion" -> useItem("mana potion", state)
         | "eat bread" | "use bread" -> useItem("bread", state)
@@ -386,13 +391,14 @@ let parseCommand (x, state : State) =
         | "examine bread" -> examineItem("bread", state)
         | "examine emerald" -> examineItem("emerald", state)
         | "examine easter egg" -> examineItem("easter egg", state)
-        | "inventory" -> "", showInventory(state)
+        | "inventory" | "items" -> "", showInventory(state)
         | "help" -> (commands|> String.concat "\n",state)
         | "stats" -> "", showStats(state)
         | "buy health potion" -> buy("health potion", 20, state)
         | "buy mana potion" -> buy("mana potion", 15, state)
         | "buy bread" -> buy("bread", 10, state)
         | "buy emerald" -> buy("emerald", 100, state)
+        | "where am i" | "location" | "where" -> gazeAt(state.map.[state.player.obj.y].[state.player.obj.x]), state
         | _ -> ("Unknown command", state)
     else
         "Game over", state
