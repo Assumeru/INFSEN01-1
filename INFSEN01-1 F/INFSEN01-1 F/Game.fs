@@ -377,6 +377,7 @@ let parseCommand (x, state : State) =
         | "turn right" -> "You turned right", {state with player = {state.player with obj = {state.player.obj with r = getDirection("right", state)}}}
         | "turn around" -> "You turned around", {state with player = {state.player with obj = {state.player.obj with r = getDirection("behind", state)}}}
         | "walk" | "move" | "run" -> move(getDirection("ahead", state), state)
+        | "run away" -> move(getDirection("behind", state), state)
         | "fly" -> "People cannot fly", state
         | "commit suicide" -> "You have died..." , {state with running = false}
         | "loot" -> loot(state)
