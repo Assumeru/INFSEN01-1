@@ -49,7 +49,7 @@ let addXP(player, xp) =
     let player = {player with Player.xp = player.xp + xp}
     let threshold = player.lvl * player.lvl * 10 + 10;
     if(player.xp >= threshold) then
-        let player = {player with xp = player.xp - threshold; lvl = player.lvl + 1; damage = player.damage + 1; hp = player.hp}
+        let player = {player with xp = player.xp - threshold; lvl = player.lvl + 1; damage = player.damage + 1; hp = player.hp + 2}
         printfn "You advanced to level %d" player.lvl
         player
     else
@@ -133,7 +133,7 @@ let generateRandomMonsterName(state) =
 let createMonster(lvl, x, y, d, state) : Monster =
     let hp = random.Next(10) + lvl * 3 + 10
     let xp = random.Next(10) + lvl * 10 + 1
-    let gp = random.Next(lvl + 10)
+    let gp = random.Next(lvl * 2 + 10)
     let damage = random.Next(2) + lvl + 1
     {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp; gp = gp; damage = damage; name = generateRandomMonsterName(state)}
 
