@@ -345,7 +345,7 @@ let buy(item, price, state) =
         if(price > state.player.gp) then
             "You need " + price.ToString() + " gold to buy this item", state
         else
-            item + " bought for " + price.ToString(), {state with player = {state.player with gp = state.player.gp - price; inv = state.player.inv.Add(item, state.player.inv.[item])}}
+            item + " bought for " + price.ToString(), {state with player = {state.player with gp = state.player.gp - price; inv = state.player.inv.Add(item, state.player.inv.[item] + 1)}}
     else
         "There is no store here", state
 
