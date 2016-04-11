@@ -32,7 +32,7 @@ namespace INFSEN01_1
 
         public void Run()
         {
-            startBackgroundThread();
+            StartBackgroundThread();
             while(true)
             {
                 string line = Console.ReadLine().ToLower();
@@ -50,7 +50,7 @@ namespace INFSEN01_1
             }
         }
 
-        private void startBackgroundThread()
+        private void StartBackgroundThread()
         {
             thread = new Thread(new ThreadStart(RunBackgroundThread));
             thread.Start();

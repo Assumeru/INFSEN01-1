@@ -47,6 +47,13 @@
     <Compile Include="Game.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\INFSEN01-1 C\Functions\Functions.csproj">
+      <Name>Functions</Name>
+      <Project>{21f95ed5-4fb2-4b17-9fd3-bfbe42e3a5d2}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
