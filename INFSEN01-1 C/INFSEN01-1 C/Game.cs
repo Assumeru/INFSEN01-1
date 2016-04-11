@@ -15,9 +15,9 @@ namespace INFSEN01_1
         public GameWrapper(string file, string monsterNamesFile, string monsterPrefixesFile)
         {
             string map = System.IO.File.ReadAllText(file);
-            string[] monsterNames = System.IO.File.ReadAllText(monsterNamesFile).Split('\n');
-            string[] monsterPrefixes= System.IO.File.ReadAllText(monsterPrefixesFile).Split('\n');
-            state = Func::Game.createState(ConvertMap(map.Split('\n')), Func::Game.createPlayer(0, 0, Func::Game.Direction.south), monsterPrefixes, monsterNames);
+            string[] monsterNames = System.IO.File.ReadAllText(monsterNamesFile).Replace("\r", string.Empty).Split('\n');
+            string[] monsterPrefixes= System.IO.File.ReadAllText(monsterPrefixesFile).Replace("\r", string.Empty).Split('\n');
+            state = Func::Game.createState(ConvertMap(map.Replace("\r", string.Empty).Split('\n')), Func::Game.createPlayer(0, 0, Func::Game.Direction.south), monsterPrefixes, monsterNames);
         }
 
         private char[][] ConvertMap(string[] map)
@@ -35,9 +35,9 @@ namespace INFSEN01_1
             StartBackgroundThread();
             while(true)
             {
-                string line = Console.ReadLine().ToLower();
+                string line = Console.ReadLine().ToLower().Trim();
                 var output = Func::Game.parseCommand(line, state);
-                string[] strippedOutput = output.Item1.Replace("\r", string.Empty).Split('\n');
+                string[] strippedOutput = output.Item1.Split('\n');
                 foreach(string o in strippedOutput)
                 {
                     Console.WriteLine(o);

@@ -48,7 +48,7 @@ let addXP player xp =
     let player = {player with Player.xp = player.xp + xp}
     let threshold = player.lvl * player.lvl * 10 + 10;
     if(player.xp >= threshold) then
-        let player = {player with xp = player.xp - threshold; lvl = player.lvl + 1; damage = player.damage + 1; hp = player.hp}
+        let player = {player with xp = player.xp - threshold; lvl = player.lvl + 1; damage = player.damage + 1; hp = player.hp + 2}
         printfn "You advanced to level %d" player.lvl
         player
     else
@@ -132,7 +132,7 @@ let generateRandomMonsterName state =
 let createMonster lvl x y d state =
     let hp = lvl * 3 + 10 + random.Next 10
     let xp = lvl * 10 + 1 + random.Next 10
-    let gp = random.Next (lvl + 10)
+    let gp = random.Next (lvl * 2 + 10)
     let damage = 1 + lvl + random.Next 2
     {obj = {x = x; y = y; r = d}; hp = hp ; xp = xp; gp = gp; damage = damage; name = generateRandomMonsterName state}
 
@@ -392,6 +392,7 @@ let parseCommand x state =
         | "buy mana potion" -> buy "mana potion" 15 state
         | "buy bread" -> buy "bread" 10 state
         | "buy emerald" -> buy "emerald" 100 state
+        | "where am i" | "location" | "where" -> gazeAt state.map.[state.player.obj.y].[state.player.obj.x], state
         | _ -> "Unknown command", state
     else
         "Game over", state
